@@ -1,6 +1,14 @@
 ####
-# Calculating some stats playlivemanager.com
+# Datamonging playlivemanager.com
 ####
+
+###
+# TO DO: 
+# (1) Clean Data Characters (Euro symbol, K, M) in R instead of spreadsheeds;
+#     take care of Thomas Muller and other Earnings being converted from K to M
+# (2) Write functions to automatically import/edit all sheets
+###
+
 
 ## Load packages
 library("googlesheets")
