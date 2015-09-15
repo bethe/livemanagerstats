@@ -18,33 +18,156 @@ head(master)
 data$PPM <- data$EARNINGS / data$INIT_VALUE
 head(data[order(-data$PPM),1:7], 10) #Top 10 PPM
 head(data[order(-data$EARNINGS),1:7], 10) #Top 10 Earnings
- 
-## Scatter plot of value vs earnings
-plot(data$INIT_VALUE, data$EARNINGS)
 
+
+## Scatter plot of value vs earnings
 png("~/Downloads/plots/plot1.png")
-ggplot(data, aes(x = INIT_VALUE, y = EARNINGS, fill = POS)) +
+ggplot(data, aes(x = INIT_VALUE, y = EARNINGS, color = POS)) +
   geom_point(size = 3, alpha = 0.7) +
-  geom_abline(intercept = 0, slope = 0, colour = "grey40") +
-  geom_smooth(method = "loess", se=FALSE,  colour = "blue", size = 1)
+  #geom_abline(intercept = 0, slope = 0, colour = "grey40") +
+  geom_smooth(method = "loess", se=FALSE, size = 1)
+dev.off()
+
+png("~/Downloads/plots/plot2.png")
+ggplot(data, aes(x=INIT_VALUE, y=EARNINGS, color=POS)) +
+    geom_point(shape=1) +
+    scale_colour_hue(l=50) + # Use a slightly darker palette than normal
+    geom_smooth(method=lm,   # Add linear regression lines
+    se=FALSE)    # Don't add shaded confidence region
 dev.off()
 
 
-## Regression, smoothing, etc.
+## Calculate scatter plot only for players who scored points
+players <- sqldf('SELECT * FROM data WHERE EARNINGS <> 0')
 
-## Sample Code
- +
-   geom_abline(intercept = 0, slope = 0, colour = "grey40") +
-   geom_smooth(method = "loess", se=TRUE,  colour = "#A0A0A0", size = 4) +
-   geom_point(shape = 21, size = 3, alpha = 0.7) +
-   scale_fill_gradient2(low = "#0000FF", mid = "#FF9933", high ="#FF0000",
-                        midpoint = median(data$Glob)/100, space = "rgb", 
-                        guide = "none", name = "Temperature Deviation (C)") +
-   ggtitle(expression(atop("Rise in temperatures since 1880",
-                      atop(italic("Global temperature deviations from the 1951-1980 average: Yearly values and Trend"), "")))) +
-   ylab("Deviation (Degrees Celsius)") +   
-   theme(axis.text.x = element_text(angle=90, face="bold", colour="black"),
-         panel.background = element_rect(fill = "white"),
-         panel.grid.major = element_line(colour = "white"),
-         panel.border = element_rect(fill = "NA"))
+png("~/Downloads/plots/plotplayers2.png")
+ggplot(players, aes(x=INIT_VALUE, y=EARNINGS, color=POS)) +
+    geom_point(shape=1) +
+    scale_colour_hue(l=50) + # Use a slightly darker palette than normal
+    geom_smooth(method=lm,   # Add linear regression lines
+    se=FALSE)    # Don't add shaded confidence region
+dev.off()
 
+png("~/Downloads/plots/plotplayers1.png")
+ggplot(players, aes(x = INIT_VALUE, y = EARNINGS, color = POS)) +
+  geom_point(size = 3, alpha = 0.7) +
+  #geom_abline(intercept = 0, slope = 0, colour = "grey40") +
+  geom_smooth(method = "loess", se=FALSE, size = 1)
+dev.off()
+
+
+## Scatter PPM vs VALUE
+png("~/Downloads/plots/plotppm1.png")
+ggplot(data, aes(x = INIT_VALUE, y = PPM, color = POS)) +
+  geom_point(size = 3, alpha = 0.7) +
+  #geom_abline(intercept = 0, slope = 0, colour = "grey40") +
+  geom_smooth(method = "loess", se=FALSE, size = 1)
+dev.off()
+
+png("~/Downloads/plots/plotppm2.png")
+ggplot(data, aes(x=INIT_VALUE, y=PPM, color=POS)) +
+    geom_point(shape=1) +
+    scale_colour_hue(l=50) + # Use a slightly darker palette than normal
+    geom_smooth(method=lm,   # Add linear regression lines
+    se=FALSE)    # Don't add shaded confidence region
+dev.off()
+
+
+## Boxplots Value and PPM by POS
+POSbyMedian <- with(data, reorder(POS, PPM, median)) # get positions in order of PPM median
+png("~/Downloads/plots/boxplotppmpos.png")
+ggplot(data, aes(x=POSbyMedian, y=PPM, fill=POS)) +
+    geom_boxplot() +
+    xlab("Position") +   
+    guides(fill=FALSE) +
+    scale_colour_hue(l=50) 
+dev.off()
+
+POSbyMedian <- with(players, reorder(POS, PPM, median)) # get positions in order of PPM median
+png("~/Downloads/plots/boxplotppmposplayersonly.png")
+ggplot(players, aes(x=POSbyMedian, y=PPM, fill=POS)) +
+    geom_boxplot() +
+    xlab("Position") +   
+    guides(fill=FALSE) +
+    scale_colour_hue(l=50) 
+dev.off()
+
+
+## Boxplots PPM by Club
+CLUBbyMedian <- with(data, reorder(CLUB, PPM, median)) # get positions in order of CLUB median
+png("~/Downloads/plots/boxplotppmclub.png")
+ggplot(data, aes(x=CLUBbyMedian, y=PPM, fill=CLUB)) +
+    geom_boxplot() +
+    xlab("Club") +   
+    guides(fill=FALSE) +
+    scale_colour_hue(l=50) 
+dev.off()
+
+CLUBbyMedian <- with(players, reorder(CLUB, PPM, median)) # get positions in order of CLUB median
+png("~/Downloads/plots/boxplotppmclubplayersonly.png")
+ggplot(players, aes(x=CLUBbyMedian, y=PPM, fill=CLUB)) +
+    geom_boxplot() +
+    xlab("Club") +   
+    guides(fill=FALSE) +
+    scale_colour_hue(l=50) 
+dev.off()
+
+
+## Boxplots Earnings by POS
+POSbyMedian <- with(data, reorder(POS, EARNINGS, median)) # get positions in order of PPM median
+png("~/Downloads/plots/boxplotpointspos.png")
+ggplot(data, aes(x=POSbyMedian, y=EARNINGS, fill=POS)) +
+    geom_boxplot() +
+    xlab("Position") +   
+    guides(fill=FALSE) +
+    scale_colour_hue(l=50) 
+dev.off()
+
+POSbyMedian <- with(players, reorder(POS, EARNINGS, median)) # get positions in order of PPM median
+png("~/Downloads/plots/boxplotpointsposplayersonly.png")
+ggplot(players, aes(x=POSbyMedian, y=EARNINGS, fill=POS)) +
+    geom_boxplot() +
+    xlab("Position") +   
+    guides(fill=FALSE) +
+    scale_colour_hue(l=50) 
+dev.off()
+
+
+## Boxplots EARNINGS by Club
+CLUBbyMedian <- with(data, reorder(CLUB, EARNINGS, median)) # get positions in order of CLUB median
+png("~/Downloads/plots/boxplotpointsclub.png")
+ggplot(data, aes(x=CLUBbyMedian, y=EARNINGS, fill=CLUB)) +
+    geom_boxplot() +
+    xlab("Club") +   
+    guides(fill=FALSE) +
+    scale_colour_hue(l=50) 
+dev.off()
+
+CLUBbyMedian <- with(players, reorder(CLUB, EARNINGS, median)) # get positions in order of CLUB median
+png("~/Downloads/plots/boxplotpointsclubplayersonly.png")
+ggplot(players, aes(x=CLUBbyMedian, y=EARNINGS, fill=CLUB)) +
+    geom_boxplot() +
+    xlab("Club") +   
+    guides(fill=FALSE) +
+    scale_colour_hue(l=50) 
+dev.off()
+
+
+# Density plots for players and PPM / Earnings
+ggplot(dat, aes(x=rating, colour=cond)) + geom <- density()
+
+png("~/Downloads/plots/densePPMPOS.png")
+ggplot(players, aes(x=PPM, fill = POS)) +
+    #geom_histogram(alpha = .7) +
+    geom_density(alpha = 0.4) +
+    #guides(fill=FALSE) +
+    scale_colour_hue(l=50) 
+dev.off()
+
+png("~/Downloads/plots/histPPMPOS.png") # histogram doesn't make much sense b/c less GOA&ATT than DEF & MID
+ggplot(players, aes(x=PPM, fill = POS)) +
+    geom_histogram(binwidth = 5, position = "dodge", alpha = 1) +
+    #geom_density(alpha = 0.4) +
+    #guides(fill=FALSE) +
+    scale_colour_hue(l=50) 
+dev.off()
