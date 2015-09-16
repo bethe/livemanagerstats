@@ -3,9 +3,7 @@
 ####
 
 ## Load packages
-suppressPackageStartupMessages(library("dplyr"))
-suppressPackageStartupMessages(library("plyr"))
-library(sqldf)
+library("sqldf")
 library("ggplot2")
 
 ## 1 Import Data

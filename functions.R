@@ -1,3 +1,24 @@
+# Import all sheets from a spreadsheet using googlesheets library
+import.sheets <- function(t) {     # where t is the registered trix
+
+	# get number of sheets
+	sheets = length(gs_ws_ls(t))
+	names = (gs_ws_ls(t))
+
+	# print sheet info
+	writeLines(paste("Trix contains", sheets,"sheets:"))
+	writeLines(names)
+
+	# loop to get all sheets into individual dataframes
+	for (i in 1:sheets)
+	{
+		assign(names[i], gs_read(t, ws=i))
+		writeLines(paste("Created dataframe", names[i]))
+	}
+}
+
+
+
 # Convert special characters to international format
 to.plain <- function(s) {
 
