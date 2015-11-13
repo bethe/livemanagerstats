@@ -3,8 +3,8 @@
 cd ~/R/livemanager/data
 
 # curl player data from plm api pages by player ID in [..]. Store as json files by previous player ID (#1)
-curl "https://www.playlivemanager.com/api/players/[64400-65200]/stats/round" -o "#1.txt" #Note: Add waiting period to not overload server
-curl "https://www.playlivemanager.com/api/players/[65600-65700]/stats/round" -o "#1.txt" #Note: Add waiting period to not overload server
+curl "http://www.playlivemanager.com/api/players/[64400-65700]/stats/round" -o "#1.txt" #Note: Add waiting period to not overload server
+curl "http://www.playlivemanager.com/api/players/[66600-66800]/stats/round" -o "#1.txt" #Note: Latest players, i.e. Vidal, Koman, etc.
 
 
 # merge files, each file a new line
