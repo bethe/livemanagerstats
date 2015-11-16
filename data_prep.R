@@ -10,11 +10,6 @@
 ## Load packages
 library("sqldf")
 
-## Load source file for functions
-# source("functions.R") ## ?still needed?
-
-
-
 ## 1 Import Data from spreadsheet
 raw = read.csv("data/playerdata.csv")
 
@@ -206,9 +201,13 @@ remaining_bl_6 <- sqldf('SELECT a.Name, a.Club, a.Pos, a.Value, a.Earnings, a.Av
 			 WHERE b.NAME IS NULL
 			')
 fullset <- rbind(match_1, match_2, match_3, match_4, match_5, match_6)
-
+#fullset$Earnings[abs(fullset$Earnings) < abs(fullset$Average)] <- fullset$Earnings[abs(fullset$Earnings) < abs(fullset$Average)]*1000
+oneliner <- sqldf('SELECT a.id, b.NAME AS Name, b.CLUB AS Club, b.POS AS Pos, b.VALUE AS Value, a.Earnings, a.Average, b.G, b.A, b.CS
+		  FROM totals a JOIN fullset b
+		  ON a.id = b.id')
+oneliner$init_Value <- round(oneliner$Value - oneliner$Earnings/1000000,1)
 
 ## Save for later
-save(bl_raw, fullset, file = "dataprep.RData")
+save(bl_raw, fullset, oneliner, file = "dataprep.RData")
 save.image()
 
