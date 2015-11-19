@@ -4,13 +4,14 @@
 
 ###
 # TO DO: 
+#  - double-check init_value, i.e. Draxler; better to import?
 ###
 
 
 ## Load packages
 library("sqldf")
 
-## 1 Import Data from spreadsheet
+## 1 Import Data from webscrape
 raw = read.csv("data/playerdata.csv")
 
 
@@ -30,15 +31,17 @@ bl_raw <- sqldf('SELECT * FROM raw WHERE home_squad >= 1562 AND home_squad <=157
 
 # Put data into format of web UI to match player names & positions
 ## (Name) - (Sta) - Club - (POS) -(Value) - Earnings - Average - Round - G - A - CS
+
 # Match players to club
 player_club_temp <- sqldf('SELECT id, home_squad, home_shortname, COUNT(*) AS count FROM bl_raw GROUP BY id, home_shortname ORDER BY id')
 player_club <- sqldf('SELECT id, home_squad AS squad, home_shortname AS Club, MAX(count) AS matches FROM player_club_temp GROUP BY id')
+
 # Add position for GOA & ATT
 player_pos <- sqldf('SELECT id, SUM(shot_on_target) AS shots, SUM(attempt_saved) AS saves FROM bl_raw GROUP BY id ORDER BY id')
 player_pos$Pos[!(is.na(player_pos$shots))] <- "ATT"
 player_pos$Pos[!(is.na(player_pos$saves))] <- "GOA"
+
 ## Get latest round and matches played
-sqldf('SELECT MAX(matchday) FROM bl_raw') # -> 12
 round <- sqldf('SELECT id, total_earnings AS Round 
 	       FROM bl_raw WHERE matchday = 12')
 totals <- sqldf('SELECT id, SUM(goal) AS G, SUM(assist) AS A, SUM(clean_sheet) AS CS, SUM(total_earnings) AS Earnings, COUNT(*) AS matches, SUM(total_earnings)/COUNT(*) AS Average
@@ -50,12 +53,14 @@ webstyle <- sqldf('SELECT totals.id AS id, Club, Pos, Earnings, Average, Round, 
 		  ON round.id = totals.id AND totals.id = player_club.id AND player_club.id = player_pos.id')
 
 
+
 # Format Numbers into 1.0 for millions and 450 for thousands
 # Note: round function is such a cunt; using little trick from http://stackoverflow.com/questions/12688717/round-up-from-5-in-r
 webstyle$Earnings[webstyle$Earnings < 1000000] <- floor((webstyle$Earnings[webstyle$Earnings < 1000000])/1000 + 0.5) #thousands
 webstyle$Earnings[webstyle$Earnings >= 1000000] <- round((webstyle$Earnings[webstyle$Earnings >= 1000000])/1000000,1) #Millions
 webstyle$Average[webstyle$Average < 1000000] <- floor((webstyle$Average[webstyle$Average < 1000000])/1000 + 0.5) #thousands
 webstyle$Round[webstyle$Round < 1000000] <- floor((webstyle$Round[webstyle$Round < 1000000])/1000 + 0.5) #thousands
+
 # Adjust format for GACS
 webstyle$G[is.na(webstyle$G)] <- 0
 webstyle$A[is.na(webstyle$A)] <- 0
@@ -69,6 +74,7 @@ webstyle$A <- as.integer(webstyle$A)
 library("googlesheets")
 trix <- gs_title("playlivemanager players")
 bl12 <- gs_read(trix, ws=9)
+
 # Drop Euro sign, millions M, K for thousands and convert 'NA's to 0 so that it's possible to join columns later
 bl12$VALUE <- gsub( "€ ", "", bl12$VALUE)
 bl12$VALUE <- gsub( "M", "", bl12$VALUE)
@@ -79,6 +85,7 @@ bl12$ROUND <- gsub( "K", "", bl12$ROUND)
 bl12$G[bl12$G == "-"] <- 0
 bl12$A[bl12$A == "-"] <- 0
 bl12$CS[bl12$CS == "-"] <- 0
+
 # Align column formats between bl12 and webstyle
 bl12$VALUE <- as.numeric(bl12$VALUE)
 bl12$EARNINGS <- as.numeric(bl12$EARNINGS)
@@ -93,6 +100,7 @@ bl12$CS <- as.integer(bl12$CS)
 players <- sqldf('SELECT * FROM webstyle WHERE Earnings <> 0')
 bl_players <- sqldf('SELECT * FROM bl12 WHERE EARNINGS <> 0')
 player_ids <- sqldf('SELECT id FROM players')
+
 ## Match players with completely matching data (Pos only available for GOA & ATT)
 full_match_1 <- sqldf('SELECT id, NAME, a.Club, b.POS, VALUE, a.Earnings, a.Average, a.Round, a.G, a.A, a.CS
 	       FROM players a LEFT JOIN bl_players b
@@ -147,6 +155,7 @@ full_match_3 <- sqldf('SELECT a.id, NAME, a.Club, b.POS, VALUE, a.Earnings, a.Av
 	       AND a.G = b.G
 	       AND a.A = b.A
 	       AND a.CS = b.CS')
+
 ## check for and remove duplicates from matches
 a <- sqldf('SELECT id FROM (
       SELECT id, COUNT(*) count FROM full_match_3 GROUP BY 1)
@@ -154,6 +163,7 @@ a <- sqldf('SELECT id FROM (
 avector <- a[,1]
 match_3 <- subset(full_match_3, !(is.na(full_match_3$VALUE)))
 match_3 <- subset(match_3, !(match_3$id %in% avector))
+
 ## Get remaining players
 remaining_3 <- subset(remaining_2, !(remaining_2$id %in% match_3[,1]))
 remaining_bl_3 <- sqldf('SELECT a.Name, a.Club, a.Pos, a.Value, a.Earnings, a.Average, a.Round, a.G, a.A, a.CS FROM remaining_bl_2 a LEFT OUTER JOIN match_3 b
@@ -175,6 +185,7 @@ remaining_bl_4 <- sqldf('SELECT a.Name, a.Club, a.Pos, a.Value, a.Earnings, a.Av
 			 AND a.Club = b.Club
 			 WHERE b.NAME IS NULL
 			')
+
 # by club & last round
 match_5 <- sqldf('SELECT a.id, NAME, a.Club, b.POS, VALUE, a.Earnings, a.Average, a.Round, a.G, a.A, a.CS
 	       FROM remaining_4 a JOIN remaining_bl_4 b
@@ -187,6 +198,7 @@ remaining_bl_5 <- sqldf('SELECT a.Name, a.Club, a.Pos, a.Value, a.Earnings, a.Av
 			 AND a.Club = b.Club
 			 WHERE b.NAME IS NULL
 			')
+
 # by club and rounded average
 remaining_5$EarningsR <- round(remaining_5$Earnings,-2)
 remaining_bl_5$EarningsR <- round(remaining_bl_5$EARNINGS,-2)
@@ -210,4 +222,3 @@ oneliner$init_Value <- round(oneliner$Value - oneliner$Earnings/1000000,1)
 ## Save for later
 save(bl_raw, fullset, oneliner, file = "dataprep.RData")
 save.image()
-
