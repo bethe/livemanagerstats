@@ -17,37 +17,8 @@ load("dataprep.RData")
 
 
 
-# Add Code for position for sorting later
-oneliner$poscode <- as.integer(revalue(oneliner$Pos, c("GOA" = 1, "DEF" = 2, "MID" = 3, "ATT" = 4)))
-
-
-
-# Add points earned by matchday in new dataframe "fullhouse"
-fullhouse <- oneliner
-bl_rounds <- subset(bl_raw, bl_raw$id %in% fullhouse$id)
-
-# get number of rounds played
-rounds = max(bl_rounds$matchday)
-
-# get columns in dataset now to rename additional columns later
-cols = length(fullhouse)
-
-# loop to get all earnings by round
-for (i in 1:rounds) {
-	round_only <-  subset(bl_rounds["total_earnings"], bl_rounds$matchday == i )
-	fullhouse <- transform(fullhouse, round = round_only)
-	# NOTE: works as long as both fullhouse & round are ordered by id
-	}
-
-# loop to rename columns to "RoundX" format
-for (i in (cols+1):(cols+rounds)) {
-	colnames(fullhouse)[i] <- paste0("Round",i-12)
-}
-
-
-
-## Function to calculate best11
-best11 <- function(objective, value = 100) {     # where v is max total value, r = data to optimize
+## Function to calculate best11 with a fixed player
+best11fix <- function(playerid, objective, value = 100) {     # where v is max total value, r = data to optimize
 
 	## Set up framework LPS
 	formation <- make.lp(0,nrow(fullhouse)) 
@@ -56,6 +27,9 @@ best11 <- function(objective, value = 100) {     # where v is max total value, r
 
 	# Total Value constraint
 	add.constraint(formation, fullhouse$init_Value, "<=", value)
+
+	# Fixed player constraint
+	add.constraint(formation, (fullhouse$id == playerid)*1, "=", 1)
 
 	# Position / Formation constraints
 	add.constraint(formation, (fullhouse$Pos == "GOA")*1, "=", 1) # GOA
@@ -107,6 +81,42 @@ best11 <- function(objective, value = 100) {     # where v is max total value, r
 
 
 
+# test functions
+best11fix(64467, fullhouse$Round1)
+best11(fullhouse$Round1)
+
+
+
+# get best11 nominations with 1 fixed player
+simfix1 <- fullhouse[,1:4]
+for (i in 1:nrow(simfix1)) {
+
+	for (j in 1:rounds) {
+		round11fix <-  best11fix(simfix1[i,1], fullhouse[,(cols+j)], 100)[,1]
+		round11fixdf <- as.data.frame(simfix1$id %in% c(round11fix)*1)
+		simfix1 <- transform(simfix1, best11 = round11fixdf)
+	}
+	# Progress update
+  	cat('Processing player', i, 'of', nrow(simfix1), '. ID:', simfix1[i,1],'\n')
+}
+# Aggregate and add results to simfix1
+simfix1$rowSums <- rowSums(simfix1[,(5:length(simfix1))])
+
+
+#
+# quick check
+temp <- subset(simfix1[,c("id", "Name", "Club", "Pos", "rowSums")], simfix1$rowSums > 0)
+head(temp[order(-temp$rowSums),],20)
+#
+
+# store in new simulation DB "sim"
+sim <- fullhouse[,c(1:4,11:12)]
+sim$FixOneNoms <- simfix1$rowSums
+
+
+
+
+### OLD ###
 
 # Count columns to facilitate renaming later
 cols2 = length(fullhouse)
@@ -135,6 +145,3 @@ temp <- subset(fullhouse[,c("Name", "Club", "Pos", "init_Value", "poscode", "Bes
 temp[order(temp$poscode, -temp$Best11s),]
 
 
-# Save for later
-save(bl_raw, bl_rounds, fullset, oneliner, fullhouse, file = "dataprep.RData")
-save.image()
