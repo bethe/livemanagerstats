@@ -87,7 +87,7 @@ best11(fullhouse$Round1)
 
 
 
-# get best11 nominations with 1 fixed player
+## 1 get best11 nominations with 1 fixed player
 simfix1 <- fullhouse[,1:4]
 for (i in 1:nrow(simfix1)) {
 
@@ -109,39 +109,177 @@ temp <- subset(simfix1[,c("id", "Name", "Club", "Pos", "rowSums")], simfix1$rowS
 head(temp[order(-temp$rowSums),],20)
 #
 
+
 # store in new simulation DB "sim"
-sim <- fullhouse[,c(1:4,11:12)]
 sim$FixOneNoms <- simfix1$rowSums
 
+# add variable to weigh nominations by matches played
+matches <- round(fullhouse$Earnings / fullhouse$Average)
+sim$FixOneNomsWeighted <- sim$FixOneNoms / matches
 
 
 
-### OLD ###
+## 2 Get best11 earnings with 1 fixed player
+simfix1Earn <- fullhouse[,1:4]
+for (i in 1:nrow(simfix1Earn)) {
 
-# Count columns to facilitate renaming later
-cols2 = length(fullhouse)
-# Get Best11 for each round via Loop
-for (i in 1:rounds) {
-	round11 <-  best11(fullhouse[,(cols+i)], 100)[,1]
-	round11df <- as.data.frame(fullhouse$id %in% c(round11)*1)
-#	colnames(round11df)[1] <- "best11"
-	fullhouse <- transform(fullhouse, best11 = round11df)
-	# NOTE: only works as long as both fullhouse & longvector are ordered by id
+	for (j in 1:rounds) {
+		round11fix <-  best11fix(simfix1Earn[i,1], fullhouse[,(cols+j)], 100)
+		round11fixdf <- as.data.frame(simfix1Earn$id %in% c(round11fix$id)*sum(round11fix$Earnings))
+		simfix1Earn <- transform(simfix1Earn, best11 = round11fixdf)
 	}
+	# Progress update
+  	cat('Processing player', i, 'of', nrow(simfix1Earn), '. ID:', simfix1Earn[i,1],'\n')
+}
+# Aggregate and add results to simfix1
+simfix1Earn$rowSums <- rowSums(simfix1Earn[,(5:length(simfix1Earn))])
 
-# loop to rename columns to "Best11RoundX" format
-for (i in (cols2+1):(cols2+rounds)) {
-	colnames(fullhouse)[i] <- paste0("Best11Round",i-24)
+
+# store in new simulation DB "sim"
+sim$FixOneEarn <- simfix1Earn$rowSums
+
+# add variable to weigh nominations by matches played
+sim$FixOneEarnAvg <- sim$FixOneEarn / sim$FixOneNoms
+
+
+
+## 3 get last 5 best11 nominations with 1 fixed player
+simfixFIVE <- fullhouse[,1:4]
+for (i in 1:nrow(simfixFIVE)) {
+
+	for (j in (rounds-5):rounds) {
+		round11fix <-  best11fix(simfixFIVE[i,1], fullhouse[,(cols+j)], 100)[,1]
+		round11fixdf <- as.data.frame(simfixFIVE$id %in% c(round11fix)*1)
+		simfixFIVE <- transform(simfixFIVE, best11 = round11fixdf)
+	}
+	# Progress update
+  	cat('Processing player', i, 'of', nrow(simfixFIVE), '. ID:', simfixFIVE[i,1],'\n')
+}
+# Aggregate and add results to simfixFIVE
+simfixFIVE$rowSums <- rowSums(simfixFIVE[,(5:length(simfixFIVE))])
+
+
+#
+# quick check
+temp <- subset(simfixFIVE[,c("id", "Name", "Club", "Pos", "rowSums")], simfixFIVE$rowSums > 0)
+head(temp[order(-temp$rowSums),],20)
+#
+
+
+# store in new simulation DB "sim"
+sim$FixOneNoms5 <- simfixFIVE$rowSums
+
+# add variable to weigh nominations by matches played
+sim$FixOneNoms5W <- sim$FixOneNoms5 / matches
+
+
+
+## 6 Create function to get nominations for a variable range of rounds
+simfixrounds <- function(x, y) { # x = first round, y = last round in range
+	simfixtemp <- fullhouse[,1:4]
+	for (i in 1:nrow(simfixtemp)) {
+	
+		for (j in x:y) {
+			round11fix <-  best11fix(simfixtemp[i,1], fullhouse[,(cols+j)], 100)[,1]
+			round11fixdf <- as.data.frame(simfixtemp$id %in% c(round11fix)*1)
+			simfixtemp <- transform(simfixtemp, best11 = round11fixdf)
+		}
+		# Progress update
+	  	cat('Processing player', i, 'of', nrow(simfixtemp), '. ID:', simfixtemp[i,1],'\n')
+	}
+	# Aggregate and add results to simfixtemp
+	simfixtemp$Nominations <- rowSums(simfixtemp[,(5:length(simfixtemp))])
+
+	# Output
+	return(simfixtemp[,c("id", "Name", "Pos", "Nominations")])
+
 }
 
-#Count columns again. Always handy.
-cols3 = length(fullhouse)
-# Add column with number of Best11s
-fullhouse$Best11s <- rowSums(fullhouse[,((cols2+1):cols3)])
 
 
-# Check checkedicheck
-temp <- subset(fullhouse[,c("Name", "Club", "Pos", "init_Value", "poscode", "Best11s")], fullhouse$Best11s > 1)
-temp[order(temp$poscode, -temp$Best11s),]
+
+# Play
+earningsLastSix <- fullhouse[,19:24]
+
+### Strategies
+  # 0 Optimum
+stratOptimum <- fullhouse[,31:36]
+  # 1 Previous week's top 11
+stratPrevWeek <- fullhouse[,30:35]
+  # 2 Most nominated all
+x <- as.data.frame(fullhouse$id %in% c(best11(sim$FixOneNoms)[,1])*1)
+stratMostNom <- cbind(x,x,x,x,x,x) # Get into format for 6 weeks
+  # 3 Most nominated weighted
+x <- as.data.frame(fullhouse$id %in% c(best11(sim$FixOneNomsWeighted)[,1])*1)
+stratMostNomW <- cbind(x,x,x,x,x,x) # Get into format for 6 weeks
+  # 4 Most nominated Earnings
+x <- as.data.frame(fullhouse$id %in% c(best11(sim$FixOneEarn)[,1])*1)
+stratMostNomEarn <- cbind(x,x,x,x,x,x) # Get into format for 6 weeks
+  # 5 Average Earnings
+x <- as.data.frame(fullhouse$id %in% c(best11(sim$FixOneEarnAvg)[,1])*1)
+stratAvgNomEarn <- cbind(x,x,x,x,x,x) # Get into format for 6 weeks
+  # 6 Most nominations last 5 weeks (post)
+x <- as.data.frame(fullhouse$id %in% c(best11(sim$FixOneNoms5)[,1])*1)
+stratNoms5 <- cbind(x,x,x,x,x,x) # Get into format for 6 weeks
+  # 7 Most nominations last 5 weeks Weighted (post)
+x <- as.data.frame(fullhouse$id %in% c(best11(sim$FixOneNoms5W)[,1])*1)
+stratNoms5W <- cbind(x,x,x,x,x,x) # Get into format for 6 weeks
+  # 8 Most nominations last 5 weeks moving
+L5R7 <- best11(simfixrounds(2,6)[,4])
+startNom5Moving <- as.data.frame(fullhouse$id %in% c(L5R7[,1])*1)
+colnames(startNom5Moving)[1] <- "Round7"
+L5R8 <- best11(simfixrounds(3,7)[,4])
+startNom5Moving$Round8 <- as.data.frame(fullhouse$id %in% c(L5R8[,1])*1)
+colnames(startNom5Moving)[2] <- "Round8"
+L5R9 <- best11(simfixrounds(4,8)[,4])
+startNom5Moving$Round9 <- as.data.frame(fullhouse$id %in% c(L5R9[,1])*1)
+colnames(startNom5Moving)[3] <- "Round9"
+L5R10 <- best11(simfixrounds(5,9)[,4])
+startNom5Moving$Round10 <- as.data.frame(fullhouse$id %in% c(L5R10[,1])*1)
+colnames(startNom5Moving)[4] <- "Round10"
+L5R11 <- best11(simfixrounds(6,10)[,4])
+startNom5Moving$Round11 <- as.data.frame(fullhouse$id %in% c(L5R11[,1])*1)
+colnames(startNom5Moving)[5] <- "Round11"
+L5R12 <- best11(simfixrounds(7,11)[,4])
+startNom5Moving$Round12 <- as.data.frame(fullhouse$id %in% c(L5R12[,1])*1)
+colnames(startNom5Moving)[6] <- "Round12"
+  # 9 Most Earnings total
+x <- as.data.frame(fullhouse$id %in% c(best11(fullhouse$Earnings)[,1])*1)
+stratBest11Total <- cbind(x,x,x,x,x,x) # Get into format for 6 weeks
+  # 10 Most Earnings aggregating
+x1 <- as.data.frame(fullhouse$id %in% c(best11(rowSums(fullhouse[13:18]))[,1])*1)
+x2 <- as.data.frame(fullhouse$id %in% c(best11(rowSums(fullhouse[13:19]))[,1])*1)
+x3 <- as.data.frame(fullhouse$id %in% c(best11(rowSums(fullhouse[13:20]))[,1])*1)
+x4 <- as.data.frame(fullhouse$id %in% c(best11(rowSums(fullhouse[13:21]))[,1])*1)
+x5 <- as.data.frame(fullhouse$id %in% c(best11(rowSums(fullhouse[13:22]))[,1])*1)
+x6 <- as.data.frame(fullhouse$id %in% c(best11(rowSums(fullhouse[13:23]))[,1])*1)
+stratBest11Agg <- cbind(x1,x2,x3,x4,x5,x6) # Get into format for 6 weeks
+  # 11 Most Earnings Last 6 Weeks
+x1 <- as.data.frame(fullhouse$id %in% c(best11(rowSums(fullhouse[13:18]))[,1])*1)
+x2 <- as.data.frame(fullhouse$id %in% c(best11(rowSums(fullhouse[14:19]))[,1])*1)
+x3 <- as.data.frame(fullhouse$id %in% c(best11(rowSums(fullhouse[15:20]))[,1])*1)
+x4 <- as.data.frame(fullhouse$id %in% c(best11(rowSums(fullhouse[16:21]))[,1])*1)
+x5 <- as.data.frame(fullhouse$id %in% c(best11(rowSums(fullhouse[17:22]))[,1])*1)
+x6 <- as.data.frame(fullhouse$id %in% c(best11(rowSums(fullhouse[18:23]))[,1])*1)
+stratBest11MoveL6 <- cbind(x1,x2,x3,x4,x5,x6) # Get into format for 6 weeks
 
 
+
+
+### strategy scores
+strat0 <-colSums(earningsLastSix * stratOptimum)
+strat1 <-colSums(earningsLastSix * stratPrevWeek)
+strat2 <-colSums(earningsLastSix * stratMostNom)
+strat3 <-colSums(earningsLastSix * stratMostNomW)
+strat4 <-colSums(earningsLastSix * stratMostNomEarn)
+strat5 <-colSums(earningsLastSix * stratAvgNomEarn)
+strat6 <-colSums(earningsLastSix * stratNoms5)
+strat7 <-colSums(earningsLastSix * stratNoms5W)
+strat8 <-colSums(earningsLastSix * stratNom5Moving)
+strat9 <-colSums(earningsLastSix * stratBest11Total)
+strat10 <-colSums(earningsLastSix * stratBest11Agg)
+strat11 <-colSums(earningsLastSix * stratBest11MoveL6)
+
+mine <- c(1039500, 126600, 163300,984500, 1859500, 1039500)
+strategies <- rbind(strat0, strat1, strat2, strat3, strat4, strat5, strat6, strat7, strat8, strat9, strat10, strat11, mine)
+rowSums(strategies[,])

@@ -8,10 +8,20 @@ library("ggplot2")
 
 ## 1 Import Data
 load("dataprep.RData")
-head(data)
-head(marketvalues)
-head(master)
+head(bl_raw)
+head(fullset)
 
+## Some Top 10s
+head(fullset[with(fullset, order(-VALUE)),],10)
+head(fullset[with(fullset, order(-Earnings)),],10)
+head(fullset[with(fullset, order(-Average)),],10)
+head(fullset[with(fullset, order(-Round)),],10)
+
+
+
+
+
+### OLD ####
 ## Add Points Per Million Column
 data$PPM <- data$EARNINGS / data$INIT_VALUE
 head(data[order(-data$PPM),1:7], 10) #Top 10 PPM
