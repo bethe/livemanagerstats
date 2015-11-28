@@ -4,7 +4,8 @@
 
 ###
 # TO DO: 
-#  - double-check init_value, i.e. Draxler; better to import?
+#  - import from trix: rewrite so no need to manually update latest matchday in query
+#  - write separate "update-data" to only update initial stuff
 ###
 
 
@@ -42,8 +43,9 @@ player_pos$Pos[!(is.na(player_pos$shots))] <- "ATT"
 player_pos$Pos[!(is.na(player_pos$saves))] <- "GOA"
 
 ## Get latest round and matches played
+max_matchday <- max(bl_raw$matchday)
 round <- sqldf('SELECT id, total_earnings AS Round 
-	       FROM bl_raw WHERE matchday = 12')
+	       FROM bl_raw WHERE matchday = 13')
 totals <- sqldf('SELECT id, SUM(goal) AS G, SUM(assist) AS A, SUM(clean_sheet) AS CS, SUM(total_earnings) AS Earnings, COUNT(*) AS matches, SUM(total_earnings)/COUNT(*) AS Average
 		FROM bl_raw
 		WHERE status IN ("starter", "sub_in", "sub_out", "red_card")
@@ -73,32 +75,32 @@ webstyle$A <- as.integer(webstyle$A)
 # 3 Import Web UI Data (via copy on Google Spreadsheets)
 library("googlesheets")
 trix <- gs_title("playlivemanager players")
-bl12 <- gs_read(trix, ws=9)
+bl <- gs_read(trix, ws=(max_matchday-3))
 
 # Drop Euro sign, millions M, K for thousands and convert 'NA's to 0 so that it's possible to join columns later
-bl12$VALUE <- gsub( "€ ", "", bl12$VALUE)
-bl12$VALUE <- gsub( "M", "", bl12$VALUE)
-bl12$EARNINGS <- gsub( "M", "", bl12$EARNINGS)
-bl12$EARNINGS <- gsub( "K", "", bl12$EARNINGS)
-bl12$AVERAGE <- gsub( "K", "", bl12$AVERAGE)
-bl12$ROUND <- gsub( "K", "", bl12$ROUND)
-bl12$G[bl12$G == "-"] <- 0
-bl12$A[bl12$A == "-"] <- 0
-bl12$CS[bl12$CS == "-"] <- 0
+bl$VALUE <- gsub( "€ ", "", bl$VALUE)
+bl$VALUE <- gsub( "M", "", bl$VALUE)
+bl$EARNINGS <- gsub( "M", "", bl$EARNINGS)
+bl$EARNINGS <- gsub( "K", "", bl$EARNINGS)
+bl$AVERAGE <- gsub( "K", "", bl$AVERAGE)
+bl$ROUND <- gsub( "K", "", bl$ROUND)
+bl$G[bl$G == "-"] <- 0
+bl$A[bl$A == "-"] <- 0
+bl$CS[bl$CS == "-"] <- 0
 
-# Align column formats between bl12 and webstyle
-bl12$VALUE <- as.numeric(bl12$VALUE)
-bl12$EARNINGS <- as.numeric(bl12$EARNINGS)
-bl12$AVERAGE <- as.numeric(bl12$AVERAGE)
-bl12$ROUND <- as.numeric(bl12$ROUND)
-bl12$CS <- as.integer(bl12$CS)
+# Align column formats between bl and webstyle
+bl$VALUE <- as.numeric(bl$VALUE)
+bl$EARNINGS <- as.numeric(bl$EARNINGS)
+bl$AVERAGE <- as.numeric(bl$AVERAGE)
+bl$ROUND <- as.numeric(bl$ROUND)
+bl$CS <- as.integer(bl$CS)
 
 
 
 # 4 Match & merge datasets
 ## Exclude players with 0 earnings
 players <- sqldf('SELECT * FROM webstyle WHERE Earnings <> 0')
-bl_players <- sqldf('SELECT * FROM bl12 WHERE EARNINGS <> 0')
+bl_players <- sqldf('SELECT * FROM bl WHERE EARNINGS <> 0')
 player_ids <- sqldf('SELECT id FROM players')
 
 ## Match players with completely matching data (Pos only available for GOA & ATT)

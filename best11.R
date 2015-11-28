@@ -24,6 +24,7 @@ oneliner$poscode <- as.integer(revalue(oneliner$Pos, c("GOA" = 1, "DEF" = 2, "MI
 
 # Add points earned by matchday in new dataframe "fullhouse"
 fullhouse <- oneliner
+fullhouse$Round <- NULL
 bl_rounds <- subset(bl_raw, bl_raw$id %in% fullhouse$id)
 
 # get number of rounds played
@@ -41,7 +42,7 @@ for (i in 1:rounds) {
 
 # loop to rename columns to "RoundX" format
 for (i in (cols+1):(cols+rounds)) {
-	colnames(fullhouse)[i] <- paste0("Round",i-12)
+	colnames(fullhouse)[i] <- paste0("Round",i-rounds)
 }
 
 
@@ -52,7 +53,7 @@ best11 <- function(objective, value = 100) {     # where v is max total value, r
 	## Set up framework LPS
 	formation <- make.lp(0,nrow(fullhouse)) 
 	lp.control(formation, sense = "max")
-	set.objfn(formation, objective) # obj.function to maformoverallimize
+	set.objfn(formation, objective) # obj.function to formoverallimize
 
 	# Total Value constraint
 	add.constraint(formation, fullhouse$init_Value, "<=", value)
@@ -95,8 +96,8 @@ best11 <- function(objective, value = 100) {     # where v is max total value, r
 	solve(formation)
 	
 	# Store output
-	temp <- fullhouse[,c(1:4,11:12)]
-	temp$Earnings <- r
+	temp <- fullhouse[,c(1:4,6:7)]
+	temp$Earnings <- objective
 	temp$top <- get.variables(formation)
 	temp <- subset(temp, temp$top == 1)
 	temp <- temp[order(temp$poscode),]
@@ -121,7 +122,7 @@ for (i in 1:rounds) {
 
 # loop to rename columns to "Best11RoundX" format
 for (i in (cols2+1):(cols2+rounds)) {
-	colnames(fullhouse)[i] <- paste0("Best11Round",i-24)
+	colnames(fullhouse)[i] <- paste0("Best11Round",i-2*rounds)
 }
 
 #Count columns again. Always handy.

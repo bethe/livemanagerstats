@@ -46,8 +46,8 @@ best11val <- function(objective, value = 100) {     # where v is max total value
 	solve(formation)
 	
 	# Store output
-	temp <- fullhouse[,c(1:4,11:12)]
-	temp$Earnings <- r
+	temp <- fullhouse[,c(1:4,6:7)]
+	temp$Earnings <- objective
 	temp$top <- get.variables(formation)
 	temp <- subset(temp, temp$top == 1)
 	temp <- temp[order(temp$poscode),]
@@ -55,3 +55,10 @@ best11val <- function(objective, value = 100) {     # where v is max total value
 	#output
 	return(temp[,c("id", "Name", "Club", "Pos", "init_Value", "Earnings")])
 }
+
+
+round13L6 <- as.data.frame(fullhouse$id %in% c(best11(rowSums(fullhouse[21:26]))[,1])*1)
+
+
+best11val(rowSums(fullhouse[21:26]), 119.2)
+

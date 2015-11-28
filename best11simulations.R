@@ -69,8 +69,8 @@ best11fix <- function(playerid, objective, value = 100) {     # where v is max t
 	solve(formation)
 	
 	# Store output
-	temp <- fullhouse[,c(1:4,11:12)]
-	temp$Earnings <- r
+	temp <- fullhouse[,c(1:4,6:7)]
+	temp$Earnings <- objective
 	temp$top <- get.variables(formation)
 	temp <- subset(temp, temp$top == 1)
 	temp <- temp[order(temp$poscode),]
@@ -78,13 +78,6 @@ best11fix <- function(playerid, objective, value = 100) {     # where v is max t
 	#output
 	return(temp[,c("id", "Name", "Club", "Pos", "init_Value", "Earnings")])
 }
-
-
-
-# test functions
-best11fix(64467, fullhouse$Round1)
-best11(fullhouse$Round1)
-
 
 
 ## 1 get best11 nominations with 1 fixed player
@@ -102,7 +95,6 @@ for (i in 1:nrow(simfix1)) {
 # Aggregate and add results to simfix1
 simfix1$rowSums <- rowSums(simfix1[,(5:length(simfix1))])
 
-
 #
 # quick check
 temp <- subset(simfix1[,c("id", "Name", "Club", "Pos", "rowSums")], simfix1$rowSums > 0)
@@ -111,7 +103,8 @@ head(temp[order(-temp$rowSums),],20)
 
 
 # store in new simulation DB "sim"
-sim$FixOneNoms <- simfix1$rowSums
+sim <- as.data.frame(simfix1$rowSums)
+names(sim) <- "FixOneNoms"
 
 # add variable to weigh nominations by matches played
 matches <- round(fullhouse$Earnings / fullhouse$Average)
@@ -197,15 +190,14 @@ simfixrounds <- function(x, y) { # x = first round, y = last round in range
 
 
 
-
-# Play
-earningsLastSix <- fullhouse[,19:24]
+# PLAY - not yet adjusted after week 12...
+earningsLastSix <- fullhouse[,(cols2-5):cols2]
 
 ### Strategies
   # 0 Optimum
-stratOptimum <- fullhouse[,31:36]
+stratOptimum <- fullhouse[,(cols3-5):cols3]
   # 1 Previous week's top 11
-stratPrevWeek <- fullhouse[,30:35]
+stratPrevWeek <- fullhouse[,(cols3-6):(cols3-1)]
   # 2 Most nominated all
 x <- as.data.frame(fullhouse$id %in% c(best11(sim$FixOneNoms)[,1])*1)
 stratMostNom <- cbind(x,x,x,x,x,x) # Get into format for 6 weeks
@@ -225,42 +217,42 @@ stratNoms5 <- cbind(x,x,x,x,x,x) # Get into format for 6 weeks
 x <- as.data.frame(fullhouse$id %in% c(best11(sim$FixOneNoms5W)[,1])*1)
 stratNoms5W <- cbind(x,x,x,x,x,x) # Get into format for 6 weeks
   # 8 Most nominations last 5 weeks moving
-L5R7 <- best11(simfixrounds(2,6)[,4])
-startNom5Moving <- as.data.frame(fullhouse$id %in% c(L5R7[,1])*1)
+L5R1 <- best11(simfixrounds((cols-10),(cols-6))[,4])
+stratNom5Moving <- as.data.frame(fullhouse$id %in% c(L5R7[,1])*1)
 colnames(startNom5Moving)[1] <- "Round7"
-L5R8 <- best11(simfixrounds(3,7)[,4])
-startNom5Moving$Round8 <- as.data.frame(fullhouse$id %in% c(L5R8[,1])*1)
+L5R2 <- best11(simfixrounds((cols-9),(cols-5))[,4])
+stratNom5Moving$Round8 <- as.data.frame(fullhouse$id %in% c(L5R8[,1])*1)
 colnames(startNom5Moving)[2] <- "Round8"
-L5R9 <- best11(simfixrounds(4,8)[,4])
-startNom5Moving$Round9 <- as.data.frame(fullhouse$id %in% c(L5R9[,1])*1)
+L5R3 <- best11(simfixrounds((cols-8),(cols-4))[,4])
+stratNom5Moving$Round9 <- as.data.frame(fullhouse$id %in% c(L5R9[,1])*1)
 colnames(startNom5Moving)[3] <- "Round9"
-L5R10 <- best11(simfixrounds(5,9)[,4])
-startNom5Moving$Round10 <- as.data.frame(fullhouse$id %in% c(L5R10[,1])*1)
+L5R4 <- best11(simfixrounds((cols-7),(cols-3))[,4])
+stratNom5Moving$Round10 <- as.data.frame(fullhouse$id %in% c(L5R10[,1])*1)
 colnames(startNom5Moving)[4] <- "Round10"
-L5R11 <- best11(simfixrounds(6,10)[,4])
-startNom5Moving$Round11 <- as.data.frame(fullhouse$id %in% c(L5R11[,1])*1)
+L5R5 <- best11(simfixrounds((cols-6),(cols-2))[,4])
+stratNom5Moving$Round11 <- as.data.frame(fullhouse$id %in% c(L5R11[,1])*1)
 colnames(startNom5Moving)[5] <- "Round11"
-L5R12 <- best11(simfixrounds(7,11)[,4])
-startNom5Moving$Round12 <- as.data.frame(fullhouse$id %in% c(L5R12[,1])*1)
+L5R6 <- best11(simfixrounds((cols-5),(cols-1))[,4])
+stratNom5Moving$Round12 <- as.data.frame(fullhouse$id %in% c(L5R12[,1])*1)
 colnames(startNom5Moving)[6] <- "Round12"
-  # 9 Most Earnings total
+# 9 Most Earnings total
 x <- as.data.frame(fullhouse$id %in% c(best11(fullhouse$Earnings)[,1])*1)
 stratBest11Total <- cbind(x,x,x,x,x,x) # Get into format for 6 weeks
   # 10 Most Earnings aggregating
-x1 <- as.data.frame(fullhouse$id %in% c(best11(rowSums(fullhouse[13:18]))[,1])*1)
-x2 <- as.data.frame(fullhouse$id %in% c(best11(rowSums(fullhouse[13:19]))[,1])*1)
-x3 <- as.data.frame(fullhouse$id %in% c(best11(rowSums(fullhouse[13:20]))[,1])*1)
-x4 <- as.data.frame(fullhouse$id %in% c(best11(rowSums(fullhouse[13:21]))[,1])*1)
-x5 <- as.data.frame(fullhouse$id %in% c(best11(rowSums(fullhouse[13:22]))[,1])*1)
-x6 <- as.data.frame(fullhouse$id %in% c(best11(rowSums(fullhouse[13:23]))[,1])*1)
+x1 <- as.data.frame(fullhouse$id %in% c(best11(rowSums(fullhouse[(cols+1):(cols2-6)]))[,1])*1)
+x2 <- as.data.frame(fullhouse$id %in% c(best11(rowSums(fullhouse[(cols+1):(cols2-5)]))[,1])*1)
+x3 <- as.data.frame(fullhouse$id %in% c(best11(rowSums(fullhouse[(cols+1):(cols2-4)]))[,1])*1)
+x4 <- as.data.frame(fullhouse$id %in% c(best11(rowSums(fullhouse[(cols+1):(cols2-3)]))[,1])*1)
+x5 <- as.data.frame(fullhouse$id %in% c(best11(rowSums(fullhouse[(cols+1):(cols2-2)]))[,1])*1)
+x6 <- as.data.frame(fullhouse$id %in% c(best11(rowSums(fullhouse[(cols+1):(cols2-1)]))[,1])*1)
 stratBest11Agg <- cbind(x1,x2,x3,x4,x5,x6) # Get into format for 6 weeks
   # 11 Most Earnings Last 6 Weeks
-x1 <- as.data.frame(fullhouse$id %in% c(best11(rowSums(fullhouse[13:18]))[,1])*1)
-x2 <- as.data.frame(fullhouse$id %in% c(best11(rowSums(fullhouse[14:19]))[,1])*1)
-x3 <- as.data.frame(fullhouse$id %in% c(best11(rowSums(fullhouse[15:20]))[,1])*1)
-x4 <- as.data.frame(fullhouse$id %in% c(best11(rowSums(fullhouse[16:21]))[,1])*1)
-x5 <- as.data.frame(fullhouse$id %in% c(best11(rowSums(fullhouse[17:22]))[,1])*1)
-x6 <- as.data.frame(fullhouse$id %in% c(best11(rowSums(fullhouse[18:23]))[,1])*1)
+x1 <- as.data.frame(fullhouse$id %in% c(best11(rowSums(fullhouse[(cols+1):(cols2-6)]))[,1])*1)
+x2 <- as.data.frame(fullhouse$id %in% c(best11(rowSums(fullhouse[(cols+2):(cols2-5)]))[,1])*1)
+x3 <- as.data.frame(fullhouse$id %in% c(best11(rowSums(fullhouse[(cols+3):(cols2-4)]))[,1])*1)
+x4 <- as.data.frame(fullhouse$id %in% c(best11(rowSums(fullhouse[(cols+4):(cols2-3)]))[,1])*1)
+x5 <- as.data.frame(fullhouse$id %in% c(best11(rowSums(fullhouse[(cols+5):(cols2-2)]))[,1])*1)
+x6 <- as.data.frame(fullhouse$id %in% c(best11(rowSums(fullhouse[(cols+6):(cols2-1)]))[,1])*1)
 stratBest11MoveL6 <- cbind(x1,x2,x3,x4,x5,x6) # Get into format for 6 weeks
 
 
@@ -280,6 +272,6 @@ strat9 <-colSums(earningsLastSix * stratBest11Total)
 strat10 <-colSums(earningsLastSix * stratBest11Agg)
 strat11 <-colSums(earningsLastSix * stratBest11MoveL6)
 
-mine <- c(1039500, 126600, 163300,984500, 1859500, 1039500)
+mine <- c(124700, 1266000, 1633000,984500, 1859500, 1039500)
 strategies <- rbind(strat0, strat1, strat2, strat3, strat4, strat5, strat6, strat7, strat8, strat9, strat10, strat11, mine)
 rowSums(strategies[,])
