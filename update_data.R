@@ -3,6 +3,9 @@
 #### (2) Integrate new players
 
 
+## load libraries
+library("sqldf")
+
 ### (1) Add latest matchday data
 
 ## Import Data
@@ -43,11 +46,3 @@ oneliner <- merge(oneliner[c("id", "Name", "Club", "Pos", "Value", "init_Value",
 oneliner$Value <- oneliner$init_Value + round(floor(oneliner$Earnings / 100000 + 0.5)/10, 1)
 
 save(bl_raw, bl_rounds, oneliner, file = "dataprep.RData")
-
-##--> Move to best11.R from here
-
-#fullhouse <- merge(fullhouse[, !names(fullhouse) %in% (c("Value", "Earnings", "Average", "G", "A", "CS"))],
-#                   oneliner[, names(oneliner) %in% (c("id", "Value", "Earnings", "Average", "G", "A", "CS", "Round"))],
-#                   by = "id")
-#names(fullhouse) <- sub("^Round$", sprintf("Round%d", max_matchday), names(fullhouse))
-#names(fullhouse) <- sub("^Tobi$", "Round", names(fullhouse))

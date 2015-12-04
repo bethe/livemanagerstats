@@ -42,7 +42,7 @@ for (i in 1:rounds) {
 
 # loop to rename columns to "RoundX" format
 for (i in (cols+1):(cols+rounds)) {
-	colnames(fullhouse)[i] <- paste0("Round",i-rounds)
+	colnames(fullhouse)[i] <- paste0("Round",i-cols)
 }
 
 
