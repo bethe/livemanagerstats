@@ -137,5 +137,5 @@ temp[order(temp$poscode, -temp$Best11s),]
 
 
 # Save for later
-save(bl_raw, bl_rounds, fullset, oneliner, fullhouse, file = "dataprep.RData")
+save(cols, cols2, cols3, rounds, bl_raw, bl_rounds, fullset, oneliner, fullhouse, file = "dataprep.RData")
 save.image()

@@ -1,13 +1,23 @@
 best11(fullhouse$Round12)
 best11cap(fullhouse$Round12)
 
-## stratBest11Agg
+## stratBest11 Last 5
 opt <- (fullhouse$id %in% c(best11val(rowSums(fullhouse[(cols+1):(cols2)]), oneliner$Value, 120.5)[,1])*1)
 temp <- fullhouse[,c(1:4,6:7)]
-temp$Earnings <- rowSums(fullhouse[(cols+1):(cols2)])[,1]
+#temp$Earnings <- rowSums(fullhouse[(cols+1):(cols2)])[,1]
 temp$top <- opt
 temp <- subset(temp, temp$top >= 1)
-temp <- temp[order(temp$poscode),]
+temp[order(temp$poscode),]
+
+## Best11 Regression
+opt <- (fullhouse$id %in% c(best11val(predictionslm$predictionslm, oneliner$Value, 120.5)[,1])*1)
+temp <- fullhouse[,c(1:4,6:7)]
+temp$Earnings <- round(predictionslm$predictionslm / 1000)
+temp$top <- opt
+temp <- subset(temp, temp$top >= 1)
+temp[order(temp$poscode),]
+
+
 
 ## Function to calculate best11
 best11cap <- function(objective, value = 100) {     # where v is max total value, r = data to optimize

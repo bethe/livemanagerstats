@@ -45,4 +45,34 @@ oneliner <- merge(oneliner[c("id", "Name", "Club", "Pos", "Value", "init_Value",
               webstyle, by = "id")
 oneliner$Value <- oneliner$init_Value + round(floor(oneliner$Earnings / 100000 + 0.5)/10, 1)
 
-save(bl_raw, bl_rounds, oneliner, file = "dataprep.RData")
+# Add Code for position for sorting later
+oneliner$poscode <- as.integer(revalue(oneliner$Pos, c("GOA" = 1, "DEF" = 2, "MID" = 3, "ATT" = 4)))
+
+
+
+# Add points earned by matchday in new dataframe "fullhouse"
+fullhouse <- oneliner
+fullhouse$Round <- NULL
+bl_rounds <- subset(bl_raw, bl_raw$id %in% fullhouse$id)
+
+# get number of rounds played
+rounds = max(bl_rounds$matchday)
+
+# get columns in dataset now to rename additional columns later
+cols = length(fullhouse)
+
+# loop to get all earnings by round
+for (i in 1:rounds) {
+  round_only <-  subset(bl_rounds["total_earnings"], bl_rounds$matchday == i )
+  fullhouse <- transform(fullhouse, round = round_only)
+  # NOTE: works as long as both fullhouse & round are ordered by id
+}
+
+# loop to rename columns to "RoundX" format
+for (i in (cols+1):(cols+rounds)) {
+  colnames(fullhouse)[i] <- paste0("Round",i-cols)
+}
+
+cols2 = length(fullhouse)
+
+save(cols, cols2, rounds, fullhouse, bl_raw, bl_rounds, oneliner, file = "dataprep.RData")
