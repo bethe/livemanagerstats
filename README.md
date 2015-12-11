@@ -7,7 +7,7 @@ playlivemanager.com - optimizing Bundesliga teams for playlivemanager.com
 
 ## ToDos
 - best11 function: find a way to include captain multiplier
-- scrape data directly from within R
+- scrape data directly from ~~within R~~ with Python ✓
 - clubspoints table: add home/away pointdiffs
 - regression: try out loess or others...
 - add web interface
