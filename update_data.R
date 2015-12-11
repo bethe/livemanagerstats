@@ -8,14 +8,11 @@ library("sqldf")
 
 ### (1) Add latest matchday data
 
-## Import Data
-load("dataprep.RData")
+## Import Data, keep colnames
+load(".RData")
+raw_colnames = colnames(raw)
 raw = read.csv("data/playerdata.csv")
-
-## Data formatting
-colnames(raw) <- gsub("\\player_status.", "", colnames(raw))
-colnames(raw) <- gsub("\\matches_info.0.", "", colnames(raw))
-colnames(raw) <- gsub("\\.", "_", colnames(raw))
+colnames(raw) <- raw_colnames
 
 ## subset to BL only players
 bl_raw <- sqldf('SELECT * FROM raw WHERE home_squad >= 1562 AND home_squad <=1579')
