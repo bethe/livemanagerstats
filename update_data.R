@@ -5,12 +5,14 @@
 
 ## load libraries
 library("sqldf")
+library("plyr")
 
 ### (1) Add latest matchday data
 
 ## Import Data, keep colnames
-load(".RData")
-raw_colnames = colnames(raw)
+setwd("/home/pi/Projects/livemanager")
+load("dataprep.RData")
+raw_colnames = colnames(bl_raw)
 raw = read.csv("data/playerdata.csv")
 colnames(raw) <- raw_colnames
 
@@ -38,8 +40,11 @@ webstyle$A <- as.integer(webstyle$A)
 
 
 ## UPDATE EXISTING DATAFRAMES
-oneliner <- merge(oneliner[c("id", "Name", "Club", "Pos", "Value", "init_Value", "poscode")],
-              webstyle, by = "id")
+library("googlesheets")
+trix <- gs_title("playlivemanager players")
+names_match <- gs_read(trix, ws=12)
+
+oneliner <- merge(names_match, webstyle, by = "id")
 oneliner$Value <- oneliner$init_Value + round(floor(oneliner$Earnings / 100000 + 0.5)/10, 1)
 
 # Add Code for position for sorting later
@@ -51,6 +56,10 @@ oneliner$poscode <- as.integer(revalue(oneliner$Pos, c("GOA" = 1, "DEF" = 2, "MI
 fullhouse <- oneliner
 fullhouse$Round <- NULL
 bl_rounds <- subset(bl_raw, bl_raw$id %in% fullhouse$id)
+plm <- sqldf("SELECT * FROM bl_raw t1
+                     LEFT JOIN 
+                    (SELECT id AS ID, Name, Club, Pos, init_Value FROM oneliner) t2
+                    ON t1.id = t2.ID")
 
 # get number of rounds played
 rounds = max(bl_rounds$matchday)
@@ -72,4 +81,4 @@ for (i in (cols+1):(cols+rounds)) {
 
 cols2 = length(fullhouse)
 
-save(cols, cols2, rounds, fullhouse, bl_raw, bl_rounds, oneliner, file = "dataprep.RData")
+save(list = ls(all = TRUE), file = "dataprep.RData")

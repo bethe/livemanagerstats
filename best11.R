@@ -48,7 +48,7 @@ for (i in (cols+1):(cols+rounds)) {
 
 
 ## Function to calculate best11
-best11 <- function(objective, value = 100) {     # where v is max total value, r = data to optimize
+best11 <- function(objective, valueconstr = fullhouse$init_Value, value = 100, exclplayerid = c()) {     # where v is max total value, r = data to optimize
 
 	## Set up framework LPS
 	formation <- make.lp(0,nrow(fullhouse)) 
@@ -56,7 +56,7 @@ best11 <- function(objective, value = 100) {     # where v is max total value, r
 	set.objfn(formation, objective) # obj.function to formoverallimize
 
 	# Total Value constraint
-	add.constraint(formation, fullhouse$init_Value, "<=", value)
+	add.constraint(formation, valueconstr, "<=", value)
 
 	# Position / Formation constraints
 	add.constraint(formation, (fullhouse$Pos == "GOA")*1, "=", 1) # GOA
@@ -68,7 +68,10 @@ best11 <- function(objective, value = 100) {     # where v is max total value, r
 	add.constraint(formation, (fullhouse$Pos == "ATT")*1, "<=", 3) # ATT
 	add.constraint(formation, rep(1, nrow(fullhouse)), "=", 11) # 11 players
 
-	# Max 4 per club constraints
+	# Excluded players (optional)
+	add.constraint(formation, (fullhouse$id %in% exclplayerid)*1, "=", 0)
+  
+  # Max 4 per club constraints
 	add.constraint(formation, (fullhouse$Club == "B04")*1, "<=", 4)
 	add.constraint(formation, (fullhouse$Club == "BMG")*1, "<=", 4)
 	add.constraint(formation, (fullhouse$Club == "BRE")*1, "<=", 4)
@@ -122,7 +125,7 @@ for (i in 1:rounds) {
 
 # loop to rename columns to "Best11RoundX" format
 for (i in (cols2+1):(cols2+rounds)) {
-	colnames(fullhouse)[i] <- paste0("Best11Round",i-2*rounds)
+	colnames(fullhouse)[i] <- paste0("Best11Round",i-(cols+rounds))
 }
 
 #Count columns again. Always handy.

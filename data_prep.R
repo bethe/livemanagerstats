@@ -11,6 +11,7 @@
 
 ## Load packages
 library("sqldf")
+library("plyr")
 
 ## 1 Import Data from webscrape
 raw = read.csv("data/playerdata.csv")
@@ -20,8 +21,9 @@ raw = read.csv("data/playerdata.csv")
 
 # 2 Data formatting
 #  simplify colnames, and use '_' as sqldf doesn't like '.' in variable names
-colnames(raw) <- gsub("\\player_status.", "", colnames(raw))
-colnames(raw) <- gsub("\\matches_info.0.", "", colnames(raw))
+colnames(raw) <- gsub("\\X__", "", colnames(raw))
+colnames(raw) <- gsub("\\player_status_", "", colnames(raw))
+colnames(raw) <- gsub("\\matches_info__", "", colnames(raw))
 colnames(raw) <- gsub("\\.", "_", colnames(raw))
 
 
@@ -75,7 +77,7 @@ webstyle$A <- as.integer(webstyle$A)
 # 3 Import Web UI Data (via copy on Google Spreadsheets)
 library("googlesheets")
 trix <- gs_title("playlivemanager players")
-bl <- gs_read(trix, ws=(max_matchday-3))
+bl <- gs_read(trix, ws=11)
 
 # Drop Euro sign, millions M, K for thousands and convert 'NA's to 0 so that it's possible to join columns later
 bl$VALUE <- gsub( "€ ", "", bl$VALUE)
@@ -219,8 +221,7 @@ fullset <- rbind(match_1, match_2, match_3, match_4, match_5, match_6)
 oneliner <- sqldf('SELECT a.id, b.NAME AS Name, b.CLUB AS Club, b.POS AS Pos, b.VALUE AS Value, a.Earnings, a.Average, b.G, b.A, b.CS
 		  FROM totals a JOIN fullset b
 		  ON a.id = b.id')
-oneliner$init_Value <- round(oneliner$Value - oneliner$Earnings/1000000,1)
+oneliner$init_Value <- round((oneliner$Value - oneliner$Earnings/1000000), 0.5)
 
 ## Save for later
 save(bl_raw, fullset, oneliner, file = "dataprep.RData")
-save.image()

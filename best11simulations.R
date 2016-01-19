@@ -288,7 +288,16 @@ x6 <- as.data.frame(fullhouse$id %in% c(best11(rowSums(fullhouse[(cols2-10):(col
 x7 <- as.data.frame(fullhouse$id %in% c(best11(rowSums(fullhouse[(cols2-9):(cols2-2)]))[,1])*1)
 x8 <- as.data.frame(fullhouse$id %in% c(best11(rowSums(fullhouse[(cols2-8):(cols2-1)]))[,1])*1)
 stratBest11MoveL8 <- cbind(x1,x2,x3,x4,x5,x6,x7,x8) # Get into format for 8 weeks
-
+# 15 Best 11 based on regression analysis
+x1 <- (fullhouse$id %in% c(best11(predictionslm[,(rounds-8)])[,1])*1)
+x2 <- (fullhouse$id %in% c(best11(predictionslm[,(rounds-7)])[,1])*1)
+x3 <- (fullhouse$id %in% c(best11(predictionslm[,(rounds-6)])[,1])*1)
+x4 <- (fullhouse$id %in% c(best11(predictionslm[,(rounds-5)])[,1])*1)
+x5 <- (fullhouse$id %in% c(best11(predictionslm[,(rounds-4)])[,1])*1)
+x6 <- (fullhouse$id %in% c(best11(predictionslm[,(rounds-3)])[,1])*1)
+x7 <- (fullhouse$id %in% c(best11(predictionslm[,(rounds-2)])[,1])*1)
+x8 <- (fullhouse$id %in% c(best11(predictionslm[,(rounds-1)])[,1])*1)
+stratBest11RegrLM <- cbind(x1,x2,x3,x4,x5,x6,x7,x8) # Get into format for 8 weeks
 
 
 
@@ -308,9 +317,10 @@ strat11 <-colSums(earningsLastEight * stratBest11MoveL6) ## Seems best so far...
 strat12 <-colSums(earningsLastEight * stratBest11MoveL5)
 strat13 <-colSums(earningsLastEight * stratBest11MoveL3)
 strat14 <-colSums(earningsLastEight * stratBest11MoveL8)
+strat15 <-colSums(earningsLastEight * stratBest11RegrLM) ## Sucks major ass, but Tyton and others look suspicious...
 
-mine <- c(1505000, 1247000, 1266000, 1633000,984500, 1859500, 1039500, 1208000)
-strategies <- rbind(strat0, strat10, strat11, strat12, strat13, strat14, mine)
+mine <- c(1247000, 1266000, 1633000,984500, 1859500, 1039500, 1208000, 998000)
+strategies <- rbind(strat0, strat10, strat11, strat12, strat13, strat14, strat15, mine)
 rowSums(strategies[,])
 
 save(bl_raw, bl_rounds, oneliner, strategies, file = "dataprep.RData")
