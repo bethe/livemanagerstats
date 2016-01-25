@@ -45,7 +45,7 @@ def download_data():
     for playerID in PLAYER_IDs:
         results = query_by_id(str(playerID))
 #        pprint.pprint(results)
-        with open("data/{0}.json".format(playerID), mode='w') as f:
+        with open("../data/{0}.json".format(playerID), mode='w') as f:
             json.dump(results, f)
 #            f.write(str(results))
             print "Stored data for player " + str(playerID) + " in " + f.name
@@ -56,13 +56,13 @@ def download_data():
 def transform_data():
     print "Deleting old files"
     try:
-        os.remove("data/all.json")
+        os.remove("../data/all.json")
     except:
         pass
     print "Begin transforming data"
     for playerID in PLAYER_IDs:
-        with open("data/all.json", mode='a') as all:
-            f = open("data/{0}.json".format(playerID), 'r')
+        with open("../data/all.json", mode='a') as all:
+            f = open("../data/{0}.json".format(playerID), 'r')
             print "Processing " + f.name
             file = f.read()
             file = file.strip()
@@ -75,9 +75,9 @@ def transform_data():
             print "Added " + f.name + " to " + all.name
 
     # wrap content in '[]', replacing last ','
-    with open("data/allfinal.json", mode='w') as all:
+    with open("../data/allfinal.json", mode='w') as all:
         print "Wrapping file in json format"
-        reader = open("data/all.json", 'r').read()
+        reader = open("../data/all.json", 'r').read()
         reader = '[' + reader
         reader = re.sub(r"\,$", r"]", reader)
         reader = reader.strip()
@@ -107,8 +107,8 @@ import csv
 import json
 import sys
 
-infile = "data/allfinal.json"
-outfile = open("data/playerdata.csv", "w")
+infile = "../data/allfinal.json"
+outfile = open("../data/playerdata.csv", "w")
 
 writer = csv.writer(outfile, delimiter=",")
 
