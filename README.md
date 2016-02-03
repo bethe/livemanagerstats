@@ -1,14 +1,17 @@
 # livemanagerstats
 playlivemanager.com - optimizing Bundesliga teams for playlivemanager.com
 
-## Approaches
-1. Calculate best 11 by optimizing for [earnings] from past [x] matches (x=6 seems optimum at the moment, besides earnings also looking at 'nominations' holding one player constant)
-2. Predict individual player scores from past x matches and optimize best 11 based on that (currently w/ linear regression
+## Approach
+1. Scrape data from API and website ✓
+2. Match player names with ids based on common attributes from API & website data ✓
+3. Build prediction models for
+    - likelihood to play
+    - likelihood of team win (using Betting odds?)
+    --> expected points / player
+4. Calculate best 11 by optimizing for [earnings] ✓
 
-## ToDos
+## V2
 - best11 function: find a way to include captain multiplier
-- scrape data directly from ~~within R~~ with Python ✓
-- clubspoints table: add home/away pointdiffs
-- regression: try out loess or others...
+- update name/id matches after January transfer window
 - add web interface
 - ...
