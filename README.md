@@ -7,7 +7,7 @@ playlivemanager.com - optimizing Bundesliga teams for playlivemanager.com
 3. Build prediction models for
     - likelihood to play
     - likelihood of team win (using Betting odds?)
-    --> expected points / player
+    - expected points / player
 4. Calculate best 11 by optimizing for [earnings] ✓
 
 ## V2
