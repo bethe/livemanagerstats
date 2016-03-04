@@ -16,7 +16,7 @@ library("plyr")
 setwd("/home/pi/Projects/livemanager")
 load("players_match.RData")
 raw = read.csv("data/playerdata.csv")
-colnames(raw) <- raw_colnames
+#colnames(raw) <- raw_colnames
 colnames(raw) <- gsub("\\X__", "", colnames(raw))
 colnames(raw) <- gsub("\\player_status_", "", colnames(raw))
 colnames(raw) <- gsub("\\matches_info__", "", colnames(raw))
